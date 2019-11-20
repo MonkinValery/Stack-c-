@@ -90,7 +90,7 @@ bool Stack_T<T>::Push(const T &value)
 {
     string name="Push1";
     Assert_Stack(name);
-    if (top_ == size_)
+    if (top_ >= size_)
     {
         size_ += 10;
         stackPtr_ = (T*)realloc(stackPtr_,size_);
