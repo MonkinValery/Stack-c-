@@ -60,7 +60,7 @@ bool Stack_T<T>::Construct(int maxSize)
     #ifndef NOSECURE
         Can1_ = Solve_Can();
     #endif
-    stackPtr_ = new T[maxSize*sizeof(T)];  //Get memory for stack
+    stackPtr_ = new T[maxSize];  //Get memory for stack
     size_=maxSize;
     top_ = 0;
 
@@ -77,7 +77,7 @@ template <typename T> //Copy stack
 bool Stack_T<T>::Copy(const Stack_T & Other_Stack)
 {
     string name="Copy";
-    stackPtr_ = new T[size_* sizeof(T)];   //Get memory for new stack
+    stackPtr_ = new T[size_];   //Get memory for new stack
     top_ = Other_Stack.get_Top();
     for (int ix=0; ix < top_; ix++)   //Copy stack
         stackPtr_[ix]=Other_Stack.get_Ptr()[ix];
@@ -90,7 +90,7 @@ T* Stack_T<T>::Add_Memory()
     T* newstackPtr_=NULL;
     string name="Add_Memory";
     size_+=10;
-    newstackPtr_ = new T[size_*sizeof(T)];
+    newstackPtr_ = new T[size_];
     for (int ix=0; ix < top_; ix++)   //Copy stack
         newstackPtr_[ix]=stackPtr_[ix];
 #ifndef NOSECURE
