@@ -7,6 +7,7 @@
 #include <iostream>
 #include <cassert>
 #include <string>
+#include <cstdlib>
 using namespace std;
 
 
@@ -17,28 +18,29 @@ private:
     #ifndef NOSECURE
         long long Can1_;
     #endif
+
+
     int top_;
     T *stackPtr_;
     unsigned int size_ ;
     int error_;
     #ifndef  NOSECURE
         unsigned long hash_;
-        long long Can2_;
         unsigned long Solve_hash();
-        long long Solve_Can1();
-        long long Solve_Can2();
+        long long Solve_Can();
     #endif
+    T* Add_Memory();      //Adding 10 elements to Stack
 
     void Assert_Stack(string);
     void Assert_ptr(string);
     bool StackOk();
     void StackDump();
 public:
-    bool Construct(int = 9);        //Create Stack
-    bool Copy(const Stack_T<T> &);        //Copy Stack
+    bool Construct(int = 10);        //Create Stack
+    bool Copy(const Stack_T<T> &);      //Copy Stack
     bool Destruct();         //Delete stack
 
-    bool Push(const T &);         //Add new element to Stack
+    bool Push(const T &, const Stack_T &);         //Add new element to Stack
     T Pop();         //Delete last element of Stack
     void Print_Stack();  //Print one element of Stack
     void Print_Element(int);    //Print hole Stack
@@ -46,22 +48,27 @@ public:
     int get_Stack_Size () const;         //Get size of Stack
     T *get_Ptr() const;          //Get pointer
     int get_Top() const;         //Get number of top element
+private:
+    #ifndef  NOSECURE
+        long long Can2_;
+    #endif
 };
 
 template <typename T> //Stack construct
 bool Stack_T<T>::Construct(int maxSize)
 {
-    stackPtr_ = new T[maxSize];  //Get memory for stack
+    #ifndef NOSECURE
+        Can1_ = Solve_Can();
+    #endif
+    stackPtr_ = new T[maxSize*sizeof(T)];  //Get memory for stack
     size_=maxSize;
     top_ = 0;
-    #ifndef NOSECURE
-        Can1_ = Solve_Can1();
-    #endif
+
     string name="Construct";
     Assert_ptr(name);
     #ifndef NOSECURE
         hash_=Solve_hash();
-        Can2_ = Solve_Can2();
+        Can2_ = Can1_;
     #endif
     return true;
 }
@@ -70,11 +77,31 @@ template <typename T> //Copy stack
 bool Stack_T<T>::Copy(const Stack_T & Other_Stack)
 {
     string name="Copy";
-    stackPtr_ = new T[size_];   //Get memory for new stack
+    stackPtr_ = new T[size_* sizeof(T)];   //Get memory for new stack
     top_ = Other_Stack.get_Top();
     for (int ix=0; ix < top_; ix++)   //Copy stack
         stackPtr_[ix]=Other_Stack.get_Ptr()[ix];
     return true;
+}
+
+template <typename T>   //Adding memory
+T* Stack_T<T>::Add_Memory()
+    {
+    T* newstackPtr_=NULL;
+    string name="Add_Memory";
+    size_+=10;
+    newstackPtr_ = new T[size_*sizeof(T)];
+    for (int ix=0; ix < top_; ix++)   //Copy stack
+        newstackPtr_[ix]=stackPtr_[ix];
+#ifndef NOSECURE
+    Can1_ = Solve_Can();
+#endif
+    Assert_ptr(name);
+#ifndef NOSECURE
+    hash_=Solve_hash();
+    Can2_ = Can1_;
+#endif
+    return newstackPtr_;
 }
 
 template <typename T> //Delete stack
@@ -86,25 +113,24 @@ bool Stack_T<T>::Destruct()
 }
 
 template <typename T> //Add element to stack
-bool Stack_T<T>::Push(const T &value)
+bool Stack_T<T>::Push(const T &value, const Stack_T & Stack)
 {
     string name="Push1";
     Assert_Stack(name);
     if (top_ >= size_)
     {
-        size_ += 10;
-        stackPtr_ = (T*)realloc(stackPtr_,size_);
+        stackPtr_=Add_Memory();
         #ifndef NOSECURE
-            Can1_ = Solve_Can1();
+            Can1_ = Solve_Can();
             hash_=Solve_hash();
-            Can2_ = Solve_Can2();
+            Can2_ = Can1_;
         #endif
     }
     stackPtr_[top_++] = value;
     #ifndef NOSECURE
-        Can1_ = Solve_Can1();
+        Can1_ = Solve_Can();
         hash_=Solve_hash();
-        Can2_ = Solve_Can2();
+        Can2_ = Can1_;
     #endif
     name="Push2";
     Assert_Stack(name);
@@ -119,8 +145,8 @@ T Stack_T<T>::Pop()
     stackPtr_[top_--];
     #ifndef NOSECURE
         hash_=Solve_hash();
-        Can1_ = Solve_Can1();
-        Can2_ = Solve_Can2();
+        Can1_ = Solve_Can();
+        Can2_ = Can1_;
     #endif
     Assert_Stack(name);
     return 0;
@@ -199,8 +225,7 @@ enum ERRORS
         SIZE_ERR = 2,
         NUMBER_ERR = 3,
         HASH_ERR = 4,
-        CANARY_ERR1 = 5,
-        CANARY_ERR2 = 6,
+        CANARY_ERR = 5,
 };
 
 
@@ -215,26 +240,23 @@ template <typename T>
         error_ = PTR_ERR;
         return false;
     }
-    if (&Can1_ == nullptr)
+    if (this == nullptr)
     {
         error_ = PTR_ERR;
         return false;
     }
-    if (&Can2_ == nullptr)
-    {
-        error_ = PTR_ERR;
-        return false;
-    }
-    if (Can1_ != Solve_Can1())
-    {
-        error_ = CANARY_ERR1;
-        return false;
-    }
-    if (Can2_ != Solve_Can2())
-    {
-        error_ = CANARY_ERR2;
-        return false;
-    }
+    #ifndef NOSECURE
+        if (Can1_ != Can2_)
+        {
+            error_ = CANARY_ERR;
+            return false;
+        }
+        if (hash_ != Solve_hash())
+        {
+            error_ = HASH_ERR;
+            return false;
+        }
+    #endif
     if (top_ < 0)
     {
         error_ = NUMBER_ERR;
@@ -248,11 +270,6 @@ template <typename T>
     if (size_ < 1)
     {
         error_ = SIZE_ERR;
-        return false;
-    }
-    if (hash_ != Solve_hash())
-    {
-        error_ = HASH_ERR;
         return false;
     }
     return true;
@@ -270,28 +287,26 @@ void Stack_T<T>::StackDump()
     printf("Number of elements in stack:");
     printf("\t\t%d\n", top_);
     printf("Hash:");
-    printf("\t\t\t%d\n", hash_);
-    printf("First canary:");
-    printf("\t\t%d\n",Can1_);
-    printf("Second canary:");
-    printf("\t\t%d\n",Can2_);
+    #ifndef NOSECURE
+        printf("\t\t\t%d\n", hash_);
+        printf("First canary:");
+        printf("\t\t%d\n",Can1_);
+        printf("Second canary:");
+        printf("\t\t%d\n",Can2_);
+    #endif
     Print_Stack();
 }
 
+#ifndef NOSECURE
 template <typename T>
 unsigned long Stack_T<T>::Solve_hash()
 {
-    return (((9804657-5460983564)*top_+top_*843756-size_/9083-1)/28796+6745/6473920);
+    return (((9804657-5460983564)*top_+top_*843756-size_/9083-1)/28796+6473920%6745);
 }
 
 template <typename T>
-long long Stack_T<T>::Solve_Can1()
+long long Stack_T<T>::Solve_Can()
 {
-    return (97898740+size_*8236754-top_*8943756/25463);
+    return rand();
 }
-
-template <typename T>
-long long Stack_T<T>::Solve_Can2()
-{
-    return (7862345+Can1_*(29873642/235468-62354)-top_/76243+size_/2);
-}
+#endif
