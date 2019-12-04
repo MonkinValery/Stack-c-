@@ -101,6 +101,7 @@ T* Stack_T<T>::Add_Memory()
     hash_=Solve_hash();
     Can2_ = Can1_;
 #endif
+    delete [] stackPtr_;
     return newstackPtr_;
 }
 
